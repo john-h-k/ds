@@ -1,83 +1,22 @@
-#![feature(binary_heap_drain_sorted)]
-
-use std::{
-    cmp::Ordering,
-    collections::BinaryHeap,
-    env, fs, io,
-    path::{Path, PathBuf},
-    sync::Mutex,
-};
+use std::{env, fs, io, path::Path};
 
 use rayon::prelude::*;
 
-use clap::Parser;
-
-#[derive(Parser)]
-struct Args {
-    /// The files and directories to analyse
-    entries: Vec<PathBuf>,
-
-    /// Whether to print GNU-style human readable format (e.g 10M for 10 megabytes)
-    #[arg(short = 'H', long = "human")]
-    human: bool,
-}
-
 fn main() {
-    let args = Args::parse();
+    env::args().collect::<Vec<_>>().par_iter().for_each(|d| {
+        let path = Path::new(d);
 
-    let heap = Mutex::new(BinaryHeap::new());
+        let size = get_size(path);
 
-    args.entries.into_par_iter().for_each(|path| {
-        let size = get_size(&path);
-        heap.lock().unwrap().push(SizeOrErr(size, path));
-    });
-
-    heap.lock()
-        .unwrap()
-        .drain_sorted()
-        .map(|s| (s.0, s.1))
-        .for_each(|(size, name)| {
-            let name = name.to_string_lossy();
-            match size {
-                Ok(size) => println!("{} {}", human_size(size), name),
-                Err(err) => eprintln!("Errored attempting '{}', err = {}", name, err),
-            }
-        });
-}
-
-struct SizeOrErr(io::Result<u64>, PathBuf);
-
-impl PartialEq for SizeOrErr {
-    fn eq(&self, other: &Self) -> bool {
-        self.cmp(other) == Ordering::Equal
-    }
-}
-
-impl Eq for SizeOrErr {}
-
-impl PartialOrd for SizeOrErr {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        Some(self.cmp(other))
-    }
-}
-impl Ord for SizeOrErr {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        match self.0 {
-            Ok(len) => other.0.as_ref().map_or(Ordering::Equal, |o| len.cmp(o)),
-            Err(_) => match other.0 {
-                Ok(_) => Ordering::Less,
-                Err(_) => Ordering::Equal,
-            },
+        match size {
+            Ok(size) => println!("{} {}", human_size(size), d),
+            Err(err) => eprintln!("Errored attempting '{}', err = {}", d, err),
         }
-    }
+    });
 }
 
 fn human_size(bytes: u64) -> String {
-    let magnitude = if bytes == 0 {
-        0
-    } else {
-        (64 - 1 - bytes.leading_zeros()) / 10
-    };
+    let magnitude = (64 - 1 - bytes.leading_zeros()) / 10;
 
     let suffix = match magnitude {
         0 => "B",
