@@ -1,12 +1,21 @@
-use std::{env, fs, io, path::Path};
+use std::{
+    env, fs, io,
+    path::{Path, PathBuf},
+};
 
 use rayon::prelude::*;
 
 fn main() {
-    env::args().collect::<Vec<_>>().par_iter().for_each(|d| {
-        let path = Path::new(d);
+    //"a".parse::<u32>().unwrap();
+    let first = env::args().nth(1).unwrap();
+    if Path::new(&first).exists() {
+        println!("{} exists!", first);
+    }
 
-        let size = get_size(path);
+    env::args().collect::<Vec<_>>().par_iter().for_each(|d| {
+        let path = PathBuf::from(d);
+
+        let size = get_size(&path);
 
         match size {
             Ok(size) => println!("{} {}", human_size(size), d),
@@ -40,15 +49,17 @@ fn human_size(bytes: u64) -> String {
 
 fn get_size(path: &Path) -> io::Result<u64> {
     if path.is_dir() {
-        fs::read_dir(path)?
+        println!("{} is dir", path.to_string_lossy());
+        fs::read_dir(path)
+            .unwrap()
             .collect::<Vec<_>>()
             .into_par_iter()
             .map(|entry| -> io::Result<u64> {
-                let entry = entry?;
+                let entry = entry.unwrap();
                 get_size(&entry.path())
             })
             .sum()
     } else {
-        Ok(path.metadata()?.len())
+        Ok(path.metadata().unwrap().len())
     }
 }
