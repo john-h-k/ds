@@ -9,8 +9,8 @@ edition = "2021"
 rayon = "1.7.0"
 
 [profile.release]
-#strip = true  # Automatically strip symbols from the binary.
-#opt-level = "z"
-#lto = true
-#codegen-units = 1
-#panic = "abort"
+strip = true  # Automatically strip symbols from the binary.
+opt-level = "z"
+lto = true
+codegen-units = 1
+panic = "abort"
