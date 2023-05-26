@@ -17,9 +17,9 @@ struct Args {
     /// The files and directories to analyse
     entries: Vec<PathBuf>,
 
-    /// Whether to print GNU-style human readable format (e.g 10M for 10 megabytes)
-    #[arg(short = 'H', long = "human")]
-    human: bool,
+    /// Print sizes in raw bytes, rather than human-friendly units
+    #[arg(short = 'r', long = "raw")]
+    raw: bool,
 }
 
 fn main() {
@@ -32,6 +32,14 @@ fn main() {
         heap.lock().unwrap().push(SizeOrErr(size, path));
     });
 
+    let get_size = |size: u64| -> String {
+        if args.raw {
+            size.to_string()
+        } else {
+            human_size(size)
+        }
+    };
+
     heap.lock()
         .unwrap()
         .drain_sorted()
@@ -39,7 +47,7 @@ fn main() {
         .for_each(|(size, name)| {
             let name = name.to_string_lossy();
             match size {
-                Ok(size) => println!("{} {}", human_size(size), name),
+                Ok(size) => println!("{} {}", get_size(size), name),
                 Err(err) => eprintln!("Errored attempting '{}', err = {}", name, err),
             }
         });
@@ -100,6 +108,11 @@ fn human_size(bytes: u64) -> String {
 }
 
 fn get_size(path: &Path) -> io::Result<u64> {
+    if path.is_symlink() && !path.exists() {
+        // Ignore invalid symlinks
+        return Ok(0);
+    }
+
     if path.is_dir() {
         fs::read_dir(path)?
             .collect::<Vec<_>>()
