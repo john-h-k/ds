@@ -99,6 +99,10 @@ fn human_size(bytes: u64) -> String {
         3 => "G",
         4 => "T",
         5 => "P",
+        6 => "E",
+        7 => "Z",
+        8 => "Y",
+        9 => "H",
         _ => "<ginormous!>",
     };
 
