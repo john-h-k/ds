@@ -3,6 +3,10 @@ name = "ds"
 version = "0.1.0"
 edition = "2021"
 
+authors = ["John Harry Kelly <johnharrykelly@gmail.com>"]
+description = "A simple tool for finding the size of files and directories"
+license = "MIT"
+repository = "https://github.com/john-h-k/ds"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
@@ -10,7 +14,7 @@ clap = { version = "4.3.0", features = ["derive"] }
 rayon = "1.7.0"
 
 [profile.release]
-strip = true  # Automatically strip symbols from the binary.
+strip = true      # Automatically strip symbols from the binary.
 opt-level = "z"
 lto = true
 codegen-units = 1

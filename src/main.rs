@@ -23,9 +23,14 @@ struct Args {
 }
 
 fn main() {
-    let args = Args::parse();
+    let mut args = Args::parse();
 
     let heap = Mutex::new(BinaryHeap::new());
+
+    if args.entries.is_empty() {
+        let current_dir = env::current_dir().unwrap();
+        args.entries.push(current_dir);
+    }
 
     args.entries.into_par_iter().for_each(|path| {
         let size = get_size(&path);
